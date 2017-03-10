@@ -10,6 +10,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\inscription_cettia\InscriptionCaptcha;
 use Drupal\inscription_cettia\InscriptionManager;
 use Drupal\user\RoleInterface;
+use Drupal\Core\Form\FormState;
 
 /**
  * Implements hook_help().
@@ -39,10 +40,8 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
   
     if($form_id =='user_login_form' || $form_id == 'user_profile_form' || $form_id == 'user_register_form' || $form_id == 'user_pass'){
         if($form_id == 'user_login_form'){
-				drupal_set_message('WELCOME login form'); 
-         
+
         } else if($form_id == 'user_profile_form'){
-				drupal_set_message('WELCOME '.$form_id); 
             $form['account']['nom'] = array(
 		          '#type' => 'textfield',
 	              '#title' => t('Nom'),
@@ -61,7 +60,7 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
 		          '#weight' => 2,
 	          );
         }else if($form_id == 'user_register_form'){
-			drupal_set_message('WELCOME  '.$form_id); 
+		
             $form['account']['nom'] = array(
 		          '#type' => 'textfield',
 		          '#title' => t('Nom'),
@@ -71,6 +70,7 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
 		          '#weight' => 0,
 		          '#description' => t("Important: le fonctionnement du site nécessite une inscription individuelle, avec une identité réèlle. Les observations pourront être liées à une structure lors de la saisie."),
             );
+		
             $form['account']['prenom'] = array(
 		          '#type' => 'textfield',
 	              '#title' => t('Prénom'),
@@ -78,33 +78,35 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
 		          '#required' => TRUE,
 		          '#attributes' => array('placeholder' => t('Prénom...')),
 		          '#weight' => 1,
-	         );
-            $form['account']['name'] = array(
+	        );
+			$form['account']['name'] = array(
 		          '#type' => 'hidden',
 		          '#title' => t('Username'),
 		          '#default_value' => '',	
 		          '#required' => FALSE,
+				  '#weight' => 2,
             );
-		    $form['account']['titre_charte'] = array(
+			$form['account']['titre_charte'] = array(
 			      '#type' => 'item',
 			      '#required' => FALSE, 
 		          '#title' => t('Conditions générales d’utilisation de Cettia-IdF '),
                   '#weight' => 3,
 		    );
-            $form['account']['body_charte'] = array(
+			$form['account']['body_charte'] = array(
 			      '#type' => 'textarea',
 			      '#required' => FALSE,
-                 '#weight' => 4,
+                  '#weight' => 4,
 		    );
-		    $form['account']['approuve_charte'] = array(
+			$form['account']['approuve_charte'] = array(
 			      '#type' => 'checkbox',
 			      '#required' => TRUE,
 		          '#title' => t('Approbation de la charte.'),
 			      '#title_display' => 'invisible', //'before',
 		          '#field_suffix' => t("j'ai lu et j'approuve la charte d'utilisation présentée ci-dessus."),
                   '#weight' => 5,
-	          );
-            $form['account']['mail'] = array(
+	         );
+			
+			$form['account']['mail'] = array(
 		          '#type' => 'email',
 		          '#title' => t('Email address'),
 		          '#default_value' => '',	
@@ -142,9 +144,8 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
 		              '#size'=> 30,
 		              '#prefix' => '<img style="float:right;margin-left:8px;border-radius:0.5em;" src="'.$nom_image.'">',
 		              '#suffix' => '<p style="clear:both;">&nbsp;</p>',
-	          );
-            $form['actions'] = array('#type' => 'actions');
-            $form['actions']['submit'] = array('#type' => 'submit', '#value' =>t('Créer nouveau compte'));
+	          ); 
+			
         }else if($form_id == 'user_pass'){
 				drupal_set_message('WELCOME '.$form_id); 
              $form['name'] = array(
@@ -171,32 +172,51 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
   * This hook is invoked before the user account is saved to the database.
   */
 function inscription_cettia_user_presave(Drupal\Core\Session\AccountInterface $account){
-	 drupal_set_message('WELCOME TO USER_PRESAVE'); 
-     drupal_set_message('' . print_r($account, true) . ''); 
-	 /*
-    $nom = trim($account->nom);
-	$prenom =trim($account->prenom);
+	$form_state = new FormState();
+	
+	$nom= !empty($form_state->getValue('nom')) ? trim($form_state->getValue('nom')) :trim('prunst');
+	$prenom= !empty($form_state->getValue('prenom'))? trim($form_state->getValue('prenom')) : trim('prince');
     $count = 1;
    	$username = $nom.' '.$prenom;
-    $original_username = $nom.' '.$prenom;
-    while (user_load_by_name($username)) {
-	      $username = $original_username . $count++;
+    $original_username =$nom.' '.$prenom;
+
+    while (user_load_by_name($username)) { // If user exist, add number in the end.
+	      $username = $original_username.$count++;
    	}
-	    */
-   
+   $account->setUsername($username);
+   $account->activate();
 }
 
  /**
   * Implements hook_user_insert()
   */
-function inscription_cettia_user_insert(Drupal\Core\Session\AccountInterface $account){
-	  drupal_set_message(" c ' est ok .");
+function inscription_cettia_user_insert($account){
+
+	  // Provisional this of part.
+      $roles = user_role_names(TRUE); // Get all roles that are available.
+      $bundle = $account->bundle();
+      $deleted = 0;
+      $entity_id  = $account->id();
+      $revision_id = $account->id();
+      $langcode= $account->getPreferredLangcode(); // 'en';
+      $delta = 0;
+      $roles_target_id = array_search ('saisie cettia', $roles);
+
+	  // insert roles
+      if($roles_target_id !== false){
+          manager()->roles($bundle,$deleted, $entity_id, $revision_id, $langcode, $delta, $roles_target_id);
+      }
+
+	  $form_state = new FormState();
+            
       $id = $account->id();
-      $nom = $account->nom;
-      $prenom = $account->prenom;
-      $mail = $account->mail;
+	  $nom = !empty($form_state->getValue('nom')) ? trim($form_state->getValue('nom')) :trim('prunst');
+	  $prenom= !empty($form_state->getValue('prenom'))? trim($form_state->getValue('prenom')) : trim('prince');
+	  $email = $account->getEmail();
+	
+	
       // CT_user_obseurs;
-      manager()->Add($id,$nom,$prenom, $mail); 
+      manager()->Add($id,$nom,$prenom, $email);  
 	 
 }
 
@@ -229,7 +249,3 @@ function manager(){
   $service_manger = \Drupal::service('inscription.manager');
   return  $service_manger;
 }
-
-
-
-

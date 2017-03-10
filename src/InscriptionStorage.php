@@ -45,7 +45,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
    * {@inheritdoc}
    */
   public function setAdd($id, $nom, $prenom, $mail){
-     $this->connection->insert('BDSEME_cettia.CT_user_obseurs')
+     $this->connection->insert('bdseme_cettia.CT_user_obseurs')
           ->fields(array('id_user'=>$id,'nom'=>$nom, 'prenom'=>$prenom,'mel'=>$mail))
           ->execute();
   }
@@ -54,7 +54,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
    * {@inheritdoc}
    */
    public function setUpdate($id_user_account,$nom, $prenom, $mail){
-       $this->connection->update('BDSEME_cettia.CT_user_obseurs')
+       $this->connection->update('bdseme_cettia.CT_user_obseurs')
             ->fields(array('nom'=>$nom, 'prenom'=>$prenom,'mel'=>$mail))
             ->condition('id_user',$id_user_account)
             ->execute();
@@ -69,7 +69,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
     /**
      * {@inheritdoc}
      */
-    public function roles($bundle,$deleted, $entity_id, $revision_id,$langcode, $delta, $roles_target_id){
+    public function setRoles($bundle,$deleted, $entity_id, $revision_id,$langcode, $delta, $roles_target_id){
         $this->connection->insert('8drupal.user__roles')
           ->fields(array('bundle'=>$bundle, 'deleted'=>$deleted,'entity_id'=>$entity_id,'revision_id'=>$revision_id,
                       'langcode'=>$langcode,'delta'=>$delta,'roles_target_id'=>$roles_target_id
@@ -80,7 +80,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
      * {@inheritdoc}
      */
     public function findId($id){
-      return $this->connection->select('BDSEME_cettia.CT_user_obseurs','bccuo')
+      return $this->connection->select('bdseme_cettia.CT_user_obseurs','bccuo')
                   ->fields('bccuo', array('id_user'))
                   ->condition('id_user.id_user',$id);
     }

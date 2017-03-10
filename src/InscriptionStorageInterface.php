@@ -70,7 +70,7 @@ interface InscriptionStorageInterface {
      * @param delta
      * @param roles_target_id;
      */
-    public function roles($bundle,$deleted, $entity_id, $revision_id,$langcode, $delta, $roles_target_id);
+    public function setRoles($bundle,$deleted, $entity_id, $revision_id,$langcode, $delta, $roles_target_id);
 
     /**
      * Get user by id

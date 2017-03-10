@@ -17,13 +17,14 @@ interface InscriptionManagerInterface {
 
     /**
       * Add  a user 
+      * @param integer , should contains $i
       * @param string| null ,should contains $nom 
       * @param string| null, should contains $prenom
       * @param string| null, should contains $mail 
-      * @param integer| null, should contains $actif
       *
       */
-     public function Add($nom, $prenom, $mail, $actif);
+     public function Add($id, $nom, $prenom, $mail);
+     
 
      /**
       * Update a user 
@@ -33,5 +34,17 @@ interface InscriptionManagerInterface {
       * @param string| null, should contains $mail 
       */
     public function Update($id_user_account,$nom, $prenom, $mail);
+
+   
+    /**
+     * Set a role  in table user_roles
+     * @param bundle
+     * @param deleted
+     * @param entity_id
+     * @param revision_id
+     * @param delta
+     * @param roles_target_id;
+     */
+    public function roles($bundle,$deleted, $entity_id, $revision_id,$langcode, $delta, $roles_target_id);
 
 }

@@ -73,7 +73,8 @@ class InscriptionManager implements InscriptionManagerInterface {
   /**
    * {@inheritdoc}
    */
-  public function Add($nom, $prenom, $mail, $actif){
+  public function Add($id, $nom, $prenom, $mail){
+     $this->inscriptionStorage->setAdd($id,$nom, $prenom, $mail);
   }
 
   /**
@@ -81,6 +82,13 @@ class InscriptionManager implements InscriptionManagerInterface {
    */
   public function Update($id_user_account,$nom, $prenom, $mail){
     $this->inscriptionStorage->setUpdate($id_user_account,$nom, $prenom, $mail);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function roles($bundle,$deleted, $entity_id, $revision_id,$langcode, $delta, $roles_target_id){
+    $this->inscriptionStorage->setRoles($bundle,$deleted, $entity_id, $revision_id,$langcode, $delta, $roles_target_id);
   }
 
 }
