@@ -1,0 +1,235 @@
+<?php
+
+/**
+ * @file
+ * Contains inscription_cettia.module..
+ */
+
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\inscription_cettia\InscriptionCaptcha;
+use Drupal\inscription_cettia\InscriptionManager;
+use Drupal\user\RoleInterface;
+
+/**
+ * Implements hook_help().
+ */
+function inscription_cettia_help($route_name, RouteMatchInterface $route_match) {
+  switch ($route_name) {
+    // Main module help for the inscription_cettia module.
+    case 'help.page.inscription_cettia':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('This module allows registration and connection in the user account') . '</p>';
+      return $output;
+
+    default:
+  }
+}
+
+/**
+ * Implements hook_form_alter() 
+ */
+ function inscription_cettia_form_alter(&$form,FormStateInterface $form_state, $form_id){
+    
+    $inscriptionCaptcha = new InscriptionCaptcha(); // captcha
+    // Get all roles that are available.
+    $roles = user_role_names(TRUE);
+    $user = \Drupal::currentUser();
+  
+    if($form_id =='user_login_form' || $form_id == 'user_profile_form' || $form_id == 'user_register_form' || $form_id == 'user_pass'){
+        if($form_id == 'user_login_form'){
+				drupal_set_message('WELCOME login form'); 
+         
+        } else if($form_id == 'user_profile_form'){
+				drupal_set_message('WELCOME '.$form_id); 
+            $form['account']['nom'] = array(
+		          '#type' => 'textfield',
+	              '#title' => t('Nom'),
+	              '#default_value' => '',
+		          '#required' => TRUE,
+		          '#attributes' => array('placeholder' => t('Nom...')),
+		          '#weight' => 1,
+	              '#description' => t("Important: le fonctionnement du site nécessite une inscription individuelle, avec une identité réèlle. Les observations pourront être liées à une structure lors de la saisie."),
+	          );
+            $form['account']['prenom'] = array(
+		          '#type' => 'textfield',
+		          '#title' => t('Prénom'),
+		          '#default_value' => '',	
+	              '#required' => TRUE,
+		          '#attributes' => array('placeholder' => t('Prénom...')),
+		          '#weight' => 2,
+	          );
+        }else if($form_id == 'user_register_form'){
+			drupal_set_message('WELCOME  '.$form_id); 
+            $form['account']['nom'] = array(
+		          '#type' => 'textfield',
+		          '#title' => t('Nom'),
+		          '#default_value' => '',	
+		          '#required' => TRUE,
+		          '#attributes' => array('placeholder' => t('Nom...')),
+		          '#weight' => 0,
+		          '#description' => t("Important: le fonctionnement du site nécessite une inscription individuelle, avec une identité réèlle. Les observations pourront être liées à une structure lors de la saisie."),
+            );
+            $form['account']['prenom'] = array(
+		          '#type' => 'textfield',
+	              '#title' => t('Prénom'),
+		          '#default_value' => '',	
+		          '#required' => TRUE,
+		          '#attributes' => array('placeholder' => t('Prénom...')),
+		          '#weight' => 1,
+	         );
+            $form['account']['name'] = array(
+		          '#type' => 'hidden',
+		          '#title' => t('Username'),
+		          '#default_value' => '',	
+		          '#required' => FALSE,
+            );
+		    $form['account']['titre_charte'] = array(
+			      '#type' => 'item',
+			      '#required' => FALSE, 
+		          '#title' => t('Conditions générales d’utilisation de Cettia-IdF '),
+                  '#weight' => 3,
+		    );
+            $form['account']['body_charte'] = array(
+			      '#type' => 'textarea',
+			      '#required' => FALSE,
+                 '#weight' => 4,
+		    );
+		    $form['account']['approuve_charte'] = array(
+			      '#type' => 'checkbox',
+			      '#required' => TRUE,
+		          '#title' => t('Approbation de la charte.'),
+			      '#title_display' => 'invisible', //'before',
+		          '#field_suffix' => t("j'ai lu et j'approuve la charte d'utilisation présentée ci-dessus."),
+                  '#weight' => 5,
+	          );
+            $form['account']['mail'] = array(
+		          '#type' => 'email',
+		          '#title' => t('Email address'),
+		          '#default_value' => '',	
+		          '#required' => TRUE,
+                  '#description' => t("Une adresse électronique valide. Le système enverra tous les courriels à cette adresse. L'adresse électronique ne sera pas rendue publique et ne sera utilisée que pour la réception d'un nouveau mot de passe ou pour la réception de certaines notifications désirées."),
+                  '#weight' => 6,
+            );
+            $nom_image = null;
+            if(!empty($form_state->getValue('num_antispam'))){
+		            $nom_image = $form_state->getValue('num_antispam');
+		            $old = drupal_get_path('module', 'inscription_cettia').'/images/'.$nom_image;
+		            $nom_image = uniqid("images_",true);
+	             	$new = drupal_get_path('module', 'inscription_cettia').'/images/'.$nom_image;
+		
+		            if(file_exists($old.'.jpg') === false || file_exists($old.'.php') === false
+		            || rename($old.'.jpg', $new.'.jpg') == false || rename($old.'.php', $new.'.php') == false){
+		          	    $nom_image = null;
+		            }
+	          } 
+            if(empty($nom_image)){
+	              $nom_image = $inscriptionCaptcha->creerImageCaptcha();
+	          }
+            global $base_url;
+            $nom_image = $base_url.'/'.drupal_get_path('module', 'inscription_cettia').'/images/'.$nom_image.'.jpg';
+            $form['num_antispam'] = array(
+		          '#type' => 'hidden',
+		          '#value' => $nom_image,	
+	          );
+            $form['account']['quest_antispam'] = array(
+	                '#type' => 'textfield',
+	                '#title' => t("ANTISPAM: code déduit du texte à droite:"),
+		            '#default_value' => '',	
+		            '#required' => TRUE,
+	                '#weight' => 7,
+		              '#size'=> 30,
+		              '#prefix' => '<img style="float:right;margin-left:8px;border-radius:0.5em;" src="'.$nom_image.'">',
+		              '#suffix' => '<p style="clear:both;">&nbsp;</p>',
+	          );
+            $form['actions'] = array('#type' => 'actions');
+            $form['actions']['submit'] = array('#type' => 'submit', '#value' =>t('Créer nouveau compte'));
+        }else if($form_id == 'user_pass'){
+				drupal_set_message('WELCOME '.$form_id); 
+             $form['name'] = array(
+                   '#type' => 'textfield',
+                   '#title' => t('Email'),
+                   '#size' => 60,
+                   '#required' => TRUE,
+                   '#attributes' => array(
+                        'autocorrect' => 'off',
+                        'autocapitalize' => 'off',
+                        'spellcheck' => 'false',
+                        'autofocus' => 'autofocus',
+                    ),
+             );
+             $form['actions'] = array('#type' => 'actions');
+             $form['actions']['submit'] = array('#type' =>'submit', '#value' =>t('Envoyer nouveau mot de passe par courriel'));
+        }
+    }
+ }
+
+ /**
+  * Implements hook_user_presave()
+  *
+  * This hook is invoked before the user account is saved to the database.
+  */
+function inscription_cettia_user_presave(Drupal\Core\Session\AccountInterface $account){
+	 drupal_set_message('WELCOME TO USER_PRESAVE'); 
+     drupal_set_message('' . print_r($account, true) . ''); 
+	 /*
+    $nom = trim($account->nom);
+	$prenom =trim($account->prenom);
+    $count = 1;
+   	$username = $nom.' '.$prenom;
+    $original_username = $nom.' '.$prenom;
+    while (user_load_by_name($username)) {
+	      $username = $original_username . $count++;
+   	}
+	    */
+   
+}
+
+ /**
+  * Implements hook_user_insert()
+  */
+function inscription_cettia_user_insert(Drupal\Core\Session\AccountInterface $account){
+	  drupal_set_message(" c ' est ok .");
+      $id = $account->id();
+      $nom = $account->nom;
+      $prenom = $account->prenom;
+      $mail = $account->mail;
+      // CT_user_obseurs;
+      manager()->Add($id,$nom,$prenom, $mail); 
+	 
+}
+
+
+
+
+
+
+
+ /**
+  * Implements hook_cron()
+  */
+function inscription_cettia_cron(){
+	$path = drupal_get_path('module', 'inscription_cettia')."/images/";
+	if(is_dir($path)){
+		$rep = opendir($path);
+		while($file = readdir($rep)){
+			if($file != '..' && $file !='.' && $file !=''){
+				unlink($path.$file);
+			}
+		}
+	 	closedir ($rep);
+	}
+}
+
+/**
+ * use a service manager 
+ */
+function manager(){
+  $service_manger = \Drupal::service('inscription.manager');
+  return  $service_manger;
+}
+
+
+
+

@@ -1,0 +1,9 @@
+name: inscription_cettia
+type: module
+description: This module allows registration and connection in the user account
+core: 8.x
+version: VERSION
+package: Natureparif (cettia)
+dependencies:
+  - node
+  - user

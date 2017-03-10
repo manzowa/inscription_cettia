@@ -1,0 +1,13 @@
+services:
+  inscription.storage:
+    class: Drupal\inscription_cettia\InscriptionStorage
+    arguments: ['@database']
+
+  inscription.manager:
+    class: Drupal\inscription_cettia\InscriptionManager
+    arguments: ['@inscription.storage','@inscription.captcha']
+
+  inscription.captcha:
+    class: Drupal\inscription_cettia\InscriptionCaptcha
+    arguments: []
+
