@@ -56,7 +56,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
    public function setUpdate($id_user_account,$nom, $prenom, $mail){
        $this->connection->update('bdseme_cettia.CT_user_obseurs')
             ->fields(array('nom'=>$nom, 'prenom'=>$prenom,'mel'=>$mail))
-            ->condition('id_user',$id_user_account)
+            ->condition('id_user',$id_user_account,'=')
             ->execute();
    }
 
@@ -82,7 +82,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
     public function findId($id){
       return $this->connection->select('bdseme_cettia.CT_user_obseurs','bccuo')
                   ->fields('bccuo', array('id_user'))
-                  ->condition('id_user.id_user',$id);
+                  ->condition('id_user',$id,'=')->execute();
     }
 
     /**
@@ -91,5 +91,14 @@ class InscriptionStorage implements InscriptionStorageInterface {
      public function setAddUserConnect($id_user,$timeout,$jeton,$hits,$hits_consult,$hits_ses,$date_inscrit, 
      $valid,$pref_sp,$pref_structure,$pref_centre,$droits,$domaine,$prefs_mc,$charte_approuve,$coordonne_structure){
      }
+
+    /**
+     * {@iheritdoc}
+     */
+    public function findNomAndPrenomById($id){
+       return $this->connection->select('bdseme_cettia.CT_user_obseurs','bccuo')
+                  ->fields('bccuo', array('nom','prenom'))
+                  ->condition('id_user',$id,'=')->execute();
+    }
 
 }

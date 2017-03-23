@@ -6,11 +6,12 @@
  */
 
 use Drupal\Core\Routing\RouteMatchInterface;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\inscription_cettia\InscriptionCaptcha;
 use Drupal\inscription_cettia\InscriptionManager;
 use Drupal\user\RoleInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\FormState;
+use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Implements hook_help().
@@ -36,8 +37,8 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
     $inscriptionCaptcha = new InscriptionCaptcha(); // captcha
     // Get all roles that are available.
     $roles = user_role_names(TRUE);
-    $user = \Drupal::currentUser();
-  
+    $account = \Drupal::currentUser();
+
     if($form_id =='user_login_form' || $form_id == 'user_profile_form' || $form_id == 'user_register_form' || $form_id == 'user_pass'){
         if($form_id == 'user_login_form'){
 
@@ -105,7 +106,6 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
 		          '#field_suffix' => t("j'ai lu et j'approuve la charte d'utilisation présentée ci-dessus."),
                   '#weight' => 5,
 	         );
-			
 			$form['account']['mail'] = array(
 		          '#type' => 'email',
 		          '#title' => t('Email address'),
@@ -125,29 +125,26 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
 		            || rename($old.'.jpg', $new.'.jpg') == false || rename($old.'.php', $new.'.php') == false){
 		          	    $nom_image = null;
 		            }
-	          } 
+	        } 
             if(empty($nom_image)){
 	              $nom_image = $inscriptionCaptcha->creerImageCaptcha();
 	          }
             global $base_url;
             $nom_image = $base_url.'/'.drupal_get_path('module', 'inscription_cettia').'/images/'.$nom_image.'.jpg';
-            $form['num_antispam'] = array(
+            $form['account']['num_antispam'] = array(
 		          '#type' => 'hidden',
 		          '#value' => $nom_image,	
-	          );
-            $form['account']['quest_antispam'] = array(
-	                '#type' => 'textfield',
-	                '#title' => t("ANTISPAM: code déduit du texte à droite:"),
-		            '#default_value' => '',	
-		            '#required' => TRUE,
-	                '#weight' => 7,
-		              '#size'=> 30,
-		              '#prefix' => '<img style="float:right;margin-left:8px;border-radius:0.5em;" src="'.$nom_image.'">',
-		              '#suffix' => '<p style="clear:both;">&nbsp;</p>',
-	          ); 
-			
+	        );
+		    $form['account']['quest_antispam'] = array(
+	              '#type' => 'textfield',
+	              '#title' => t("ANTISPAM : code déduit du texte à droite:"),
+		          '#required' => TRUE,
+	              '#weight' => 7,
+				  '#prefix' => '<img style="float:right;margin-left:8px;border-radius:0.5em;" src="'.$nom_image.'">',
+		          '#suffix' => '<p style="clear:both;">&nbsp;</p>',
+	        );
         }else if($form_id == 'user_pass'){
-				drupal_set_message('WELCOME '.$form_id); 
+			 drupal_set_message('WELCOME '.$form_id); 
              $form['name'] = array(
                    '#type' => 'textfield',
                    '#title' => t('Email'),
@@ -162,7 +159,9 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
              );
              $form['actions'] = array('#type' => 'actions');
              $form['actions']['submit'] = array('#type' =>'submit', '#value' =>t('Envoyer nouveau mot de passe par courriel'));
-        }
+       }else if($form_id == 'user_profile_form'){
+			 $obseurs = manager()->getNomAndPrenomById($account->id());
+	   }
     }
  }
 
@@ -171,26 +170,28 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
   *
   * This hook is invoked before the user account is saved to the database.
   */
-function inscription_cettia_user_presave(Drupal\Core\Session\AccountInterface $account){
-	$form_state = new FormState();
+function inscription_cettia_user_presave($account){
 	
-	$nom= !empty($form_state->getValue('nom')) ? trim($form_state->getValue('nom')) :trim('prunst');
+	$form_state = new FormState();
+	$request = new Request();
+	$nom= !empty($form_state->getValue('nom')) ? trim($form_state->getValue('nom')) : trim('prunst');
 	$prenom= !empty($form_state->getValue('prenom'))? trim($form_state->getValue('prenom')) : trim('prince');
-    $count = 1;
+    
+	$count = 1;
    	$username = $nom.' '.$prenom;
     $original_username =$nom.' '.$prenom;
 
-    while (user_load_by_name($username)) { // If user exist, add number in the end.
+	while (user_load_by_name($username)) { // If user exist, add number in the end.
 	      $username = $original_username.$count++;
    	}
-   $account->setUsername($username);
-   $account->activate();
+	$account->setUsername($username);
+	$account->activate();
 }
 
  /**
   * Implements hook_user_insert()
   */
-function inscription_cettia_user_insert($account){
+function inscription_cettia_user_insert(Drupal\Core\Session\AccountInterface $account){
 
 	  // Provisional this of part.
       $roles = user_role_names(TRUE); // Get all roles that are available.
@@ -198,7 +199,7 @@ function inscription_cettia_user_insert($account){
       $deleted = 0;
       $entity_id  = $account->id();
       $revision_id = $account->id();
-      $langcode= $account->getPreferredLangcode(); // 'en';
+      $langcode= $account->getPreferredLangcode();
       $delta = 0;
       $roles_target_id = array_search ('saisie cettia', $roles);
 
@@ -206,24 +207,69 @@ function inscription_cettia_user_insert($account){
       if($roles_target_id !== false){
           manager()->roles($bundle,$deleted, $entity_id, $revision_id, $langcode, $delta, $roles_target_id);
       }
-
 	  $form_state = new FormState();
-            
       $id = $account->id();
 	  $nom = !empty($form_state->getValue('nom')) ? trim($form_state->getValue('nom')) :trim('prunst');
 	  $prenom= !empty($form_state->getValue('prenom'))? trim($form_state->getValue('prenom')) : trim('prince');
 	  $email = $account->getEmail();
 	
-	
       // CT_user_obseurs;
-      manager()->Add($id,$nom,$prenom, $email);  
-	 
+      manager()->Add($id,$nom,$prenom, $email);
 }
 
+/**
+ *  Implements hook_user_update 
+ */
+function inscription_cettia_user_update(Drupal\Core\Session\AccountInterface $account){
+}
 
+/**
+ * Implements hook_honeypot_time_limit
+ */
+function inscription_cettia_honeypot_time_limit($honeypot_time_limit, $form_values, $number){
+    drupal_set_message('WELCOME To honeypot');
+	$captcha = \Drupal::service('inscription.captcha');
+	$form_state = new FormState();
+	global $base_url; 
+	// var_dump($form_values); // debug($form_values);
+	$additions = 0;
+	if(isset($form_values) && isset($form_values['quest_antispam'])){
+		
+		$input_num_atsp = $form_values['num_antispam'];
+		$num_atsp = trim(basename($input_num_atsp, ".jpg").PHP_EOL);
+		$rep_user = $form_values['quest_antispam'];
+		$rep_user = strtolower($rep_user);
+		$php_file = "images/".$num_atsp.".php";
+	    $reponse = null;
+		//Inclusion file php
+		include $php_file;
+		$honeypot_time = $form_values['honeypot_time'];
+		drupal_set_message(''. print_r($rep_user, TRUE) .'');
+	  
+		if(!isset($form_values['honeypot_time']) || !is_numeric($form_values['honeypot_time']) 
+			|| $form_values['honeypot_time'] > time()){
 
+			$honeypot_time = time();
+			$honeypot_time_limit = $honeypot_time_limit + 100;
+		}
+		$honeypot_delai = time()- $honeypot_time - $honeypot_time_limit;
 
+		if(empty($reponse) || empty($rep_user) || $reponse != $rep_user){
+		    $captcha->creerImageCaptcha();
+			$form_state->setErrorByName('quest',t( 'Erreur Antispam.'));
+		    drupal_set_message(t('Erreur antispam.'), 'error');
+			\Drupal::logger('INSCRIPTION cettia')->error('antispam erreur (%antispam - %antispam2).',
+				  array('%antispam' => $reponse, '%antispam2' => $rep_user)
+			);
+			$additions = 2 * ($number+1);
+		} 
 
+		if($rep_user =="3nn"){
+			drupal_set_message(t('Bon antispam.'));
+		} 
+	}
+	return $additions;  
+}
 
 
  /**

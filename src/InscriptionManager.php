@@ -91,4 +91,17 @@ class InscriptionManager implements InscriptionManagerInterface {
     $this->inscriptionStorage->setRoles($bundle,$deleted, $entity_id, $revision_id,$langcode, $delta, $roles_target_id);
   }
 
+  /**
+   * {@inheritdoc}
+   */
+   public function buildCaptchImage($id = null){
+      return $this->inscriptionCaptcha->creerImageCaptcha($id);
+   }
+
+   /**
+    * {@inheritdoc}
+    */
+    public function getNomAndPrenomById($id){
+      return $this->inscriptionStorage->findNomAndPrenomById($id);
+    }
 }

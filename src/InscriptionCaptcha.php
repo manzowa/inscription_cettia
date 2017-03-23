@@ -99,9 +99,8 @@ class InscriptionCaptcha implements InscriptionCaptchaInterface {
       $rep = $this->questions[$photo][1].$this->lettres[$l1].$this->lettres[$l2];
 	    $rep = strtolower($rep);
 	    $fp = fopen(drupal_get_path('module', 'inscription_cettia').'/images/'.$id.'.php',"w");
-    	$nboctets = fwrite($fp,'<?php $reponse = "'.$rep.'"; ?>');
+    	$nboctets = fwrite($fp,'<?php $reponse="'.$rep.'";');
 	    fclose($fp);
-	
 	    imagejpeg($img, drupal_get_path('module', 'inscription_cettia').'/images/'.$id.'.jpg',90);
     	return $id;
   }

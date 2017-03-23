@@ -78,5 +78,10 @@ interface InscriptionStorageInterface {
      */
     public function findId($id);
 
+    /**
+     * Get name, prenom by $id
+     * @param interger| null, should contains $id 
+     */
+    public function findNomAndPrenomById($id);
 
 }

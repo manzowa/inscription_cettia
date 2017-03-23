@@ -47,4 +47,18 @@ interface InscriptionManagerInterface {
      */
     public function roles($bundle,$deleted, $entity_id, $revision_id,$langcode, $delta, $roles_target_id);
 
+
+    /**
+     * @param integer| null , $id
+     * @return image captcha
+     */
+    public function buildCaptchImage($id = null);
+
+    /**
+     * @param integer| null , $id
+     *
+     * @return $object
+     */
+    public function getNomAndPrenomById($id);
+
 }
