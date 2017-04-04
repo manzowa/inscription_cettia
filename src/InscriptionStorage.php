@@ -97,8 +97,9 @@ class InscriptionStorage implements InscriptionStorageInterface {
      */
     public function findNomAndPrenomById($id){
        return $this->connection->select('bdseme_cettia.CT_user_obseurs','bccuo')
-                  ->fields('bccuo', array('nom','prenom'))
-                  ->condition('id_user',$id,'=')->execute();
+              ->fields('bccuo',array('nom','prenom'))
+              ->condition('id_user',$id,'=')
+              ->execute();
     }
 
 }

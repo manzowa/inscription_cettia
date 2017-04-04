@@ -35,33 +35,14 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
  function inscription_cettia_form_alter(&$form,FormStateInterface $form_state, $form_id){
     
     $inscriptionCaptcha = new InscriptionCaptcha(); // captcha
-    // Get all roles that are available.
     $roles = user_role_names(TRUE);
     $account = \Drupal::currentUser();
 
-    if($form_id =='user_login_form' || $form_id == 'user_profile_form' || $form_id == 'user_register_form' || $form_id == 'user_pass'){
+    if($form_id =='user_login_form' || $form_id == 'user_form' || $form_id == 'user_register_form' || $form_id == 'user_pass'){
         if($form_id == 'user_login_form'){
 
-        } else if($form_id == 'user_profile_form'){
-            $form['account']['nom'] = array(
-		          '#type' => 'textfield',
-	              '#title' => t('Nom'),
-	              '#default_value' => '',
-		          '#required' => TRUE,
-		          '#attributes' => array('placeholder' => t('Nom...')),
-		          '#weight' => 1,
-	              '#description' => t("Important: le fonctionnement du site nécessite une inscription individuelle, avec une identité réèlle. Les observations pourront être liées à une structure lors de la saisie."),
-	          );
-            $form['account']['prenom'] = array(
-		          '#type' => 'textfield',
-		          '#title' => t('Prénom'),
-		          '#default_value' => '',	
-	              '#required' => TRUE,
-		          '#attributes' => array('placeholder' => t('Prénom...')),
-		          '#weight' => 2,
-	          );
-        }else if($form_id == 'user_register_form'){
-		
+        }else if($form_id =='user_register_form'){ // form enregistremen
+		   
             $form['account']['nom'] = array(
 		          '#type' => 'textfield',
 		          '#title' => t('Nom'),
@@ -71,7 +52,6 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
 		          '#weight' => 0,
 		          '#description' => t("Important: le fonctionnement du site nécessite une inscription individuelle, avec une identité réèlle. Les observations pourront être liées à une structure lors de la saisie."),
             );
-		
             $form['account']['prenom'] = array(
 		          '#type' => 'textfield',
 	              '#title' => t('Prénom'),
@@ -143,8 +123,9 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
 				  '#prefix' => '<img style="float:right;margin-left:8px;border-radius:0.5em;" src="'.$nom_image.'">',
 		          '#suffix' => '<p style="clear:both;">&nbsp;</p>',
 	        );
-        }else if($form_id == 'user_pass'){
+        }else if($form_id == 'user_pass'){  // form password forget
 			 drupal_set_message('WELCOME '.$form_id); 
+	
              $form['name'] = array(
                    '#type' => 'textfield',
                    '#title' => t('Email'),
@@ -159,40 +140,63 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
              );
              $form['actions'] = array('#type' => 'actions');
              $form['actions']['submit'] = array('#type' =>'submit', '#value' =>t('Envoyer nouveau mot de passe par courriel'));
-       }else if($form_id == 'user_profile_form'){
-			 $obseurs = manager()->getNomAndPrenomById($account->id());
-	   }
+       }else if( $form_id =='user_form'){ // user profile
+			drupal_set_message('WELCOME '.$form_id);
+
+			$params = UrlArray();
+			$user_id= (int) $params[2];
+			$obseurs = manager()->getNomAndPrenomById($user_id);
+			$user = null;
+			foreach($obseurs as $item){ $user = $item;break;}
+
+			$form['account']['nom'] = array(
+		          '#type' => 'textfield',
+		          '#title' => t('Nom'),
+		          '#default_value' => $user->nom,	
+		          '#required' => TRUE,
+		          '#attributes' => array('placeholder' => t('Nom...')),
+		          '#weight' => 0,
+		          '#description' => t("Important: le fonctionnement du site nécessite une inscription individuelle, avec une identité réèlle. Les observations pourront être liées à une structure lors de la saisie."),
+            );
+            $form['account']['prenom'] = array(
+		          '#type' => 'textfield',
+	              '#title' => t('Prénom'),
+		          '#default_value' => $user->prenom,	
+		          '#required' => TRUE,
+		          '#attributes' => array('placeholder' => t('Prénom...')),
+		          '#weight' => 0,
+	        );
+	   } 
     }
  }
 
- /**
-  * Implements hook_user_presave()
-  *
-  * This hook is invoked before the user account is saved to the database.
-  */
+/**
+ * Implements hook_user_presave()
+ *
+ * This hook is invoked before the user account is saved to the database.
+ */
 function inscription_cettia_user_presave($account){
-	
 	$form_state = new FormState();
-	$request = new Request();
-	$nom= !empty($form_state->getValue('nom')) ? trim($form_state->getValue('nom')) : trim('prunst');
-	$prenom= !empty($form_state->getValue('prenom'))? trim($form_state->getValue('prenom')) : trim('prince');
-    
+	$request = \Drupal::request()->request;
+	$nom= !empty($request->get('nom')) ? trim($request->get('nom')) : null;
+	$prenom= !empty($request->get('prenom'))? trim($request->get('prenom')) : null;
+	$email = $account->getEmail();
+
 	$count = 1;
    	$username = $nom.' '.$prenom;
     $original_username =$nom.' '.$prenom;
 
 	while (user_load_by_name($username)) { // If user exist, add number in the end.
-	      $username = $original_username.$count++;
+	    $username = $original_username.$count++;
    	}
 	$account->setUsername($username);
 	$account->activate();
 }
 
- /**
+/**
   * Implements hook_user_insert()
   */
-function inscription_cettia_user_insert(Drupal\Core\Session\AccountInterface $account){
-
+function inscription_cettia_user_insert($account){
 	  // Provisional this of part.
       $roles = user_role_names(TRUE); // Get all roles that are available.
       $bundle = $account->bundle();
@@ -201,51 +205,66 @@ function inscription_cettia_user_insert(Drupal\Core\Session\AccountInterface $ac
       $revision_id = $account->id();
       $langcode= $account->getPreferredLangcode();
       $delta = 0;
-      $roles_target_id = array_search ('saisie cettia', $roles);
+      $roles_target_id = array_search('saisie cettia', $roles);
 
 	  // insert roles
       if($roles_target_id !== false){
           manager()->roles($bundle,$deleted, $entity_id, $revision_id, $langcode, $delta, $roles_target_id);
       }
+
 	  $form_state = new FormState();
+	  $request = \Drupal::request()->request;
       $id = $account->id();
-	  $nom = !empty($form_state->getValue('nom')) ? trim($form_state->getValue('nom')) :trim('prunst');
-	  $prenom= !empty($form_state->getValue('prenom'))? trim($form_state->getValue('prenom')) : trim('prince');
+	  $nom= !empty($request->get('nom')) ? trim($request->get('nom')) : null;
+	  $prenom= !empty($request->get('prenom'))? trim($request->get('prenom')) : null;
 	  $email = $account->getEmail();
-	
-      // CT_user_obseurs;
-      manager()->Add($id,$nom,$prenom, $email);
-}
+      manager()->Add($id,$nom,$prenom, $email); // CT_user_obseurs;
+} 
 
 /**
  *  Implements hook_user_update 
  */
 function inscription_cettia_user_update(Drupal\Core\Session\AccountInterface $account){
+	drupal_set_message('WELCOME to update');
+	$request = \Drupal::request()->request;
+	$params = UrlArray();
+	$user_id= (int) $params[2];
+	$nom= !empty($request->get('nom')) ? trim($request->get('nom')) : null;
+	$prenom= !empty($request->get('prenom'))? trim($request->get('prenom')) : null;
+	$mail =!empty($request->get('mail'))? trim($request->get('mail')) : null;
+	manager()->Update($user_id,$nom, $prenom, $mail); // update  CT_user_obseurs;
 }
 
 /**
  * Implements hook_honeypot_time_limit
  */
 function inscription_cettia_honeypot_time_limit($honeypot_time_limit, $form_values, $number){
-    drupal_set_message('WELCOME To honeypot');
+
+	// instanciation et declaration de vairables
 	$captcha = \Drupal::service('inscription.captcha');
 	$form_state = new FormState();
+	$request = \Drupal::request()->request;
 	global $base_url; 
-	// var_dump($form_values); // debug($form_values);
 	$additions = 0;
+	var_dump($request);
+
 	if(isset($form_values) && isset($form_values['quest_antispam'])){
-		
-		$input_num_atsp = $form_values['num_antispam'];
+
+		$input_num_atsp = $request->get('num_antispam');
 		$num_atsp = trim(basename($input_num_atsp, ".jpg").PHP_EOL);
 		$rep_user = $form_values['quest_antispam'];
 		$rep_user = strtolower($rep_user);
 		$php_file = "images/".$num_atsp.".php";
 	    $reponse = null;
-		//Inclusion file php
-		include $php_file;
+		include $php_file; 	//Inclusion file php
 		$honeypot_time = $form_values['honeypot_time'];
+
+		$test_rep = $request->get('');
+
 		drupal_set_message(''. print_r($rep_user, TRUE) .'');
-	  
+		drupal_set_message(''. print_r($reponse, TRUE) .'');
+		drupal_set_message(''. print_r($test_rep, TRUE) .'');
+
 		if(!isset($form_values['honeypot_time']) || !is_numeric($form_values['honeypot_time']) 
 			|| $form_values['honeypot_time'] > time()){
 
@@ -254,7 +273,8 @@ function inscription_cettia_honeypot_time_limit($honeypot_time_limit, $form_valu
 		}
 		$honeypot_delai = time()- $honeypot_time - $honeypot_time_limit;
 
-		if(empty($reponse) || empty($rep_user) || $reponse != $rep_user){
+		if(empty($reponse) || empty($rep_user)  || $reponse != $rep_user ){
+
 		    $captcha->creerImageCaptcha();
 			$form_state->setErrorByName('quest',t( 'Erreur Antispam.'));
 		    drupal_set_message(t('Erreur antispam.'), 'error');
@@ -263,14 +283,9 @@ function inscription_cettia_honeypot_time_limit($honeypot_time_limit, $form_valu
 			);
 			$additions = 2 * ($number+1);
 		} 
-
-		if($rep_user =="3nn"){
-			drupal_set_message(t('Bon antispam.'));
-		} 
 	}
 	return $additions;  
 }
-
 
  /**
   * Implements hook_cron()
@@ -294,4 +309,14 @@ function inscription_cettia_cron(){
 function manager(){
   $service_manger = \Drupal::service('inscription.manager');
   return  $service_manger;
+}
+
+/**
+ * Get array url
+ * Falcultatif
+ */
+function UrlArray(){
+	$current_path = \Drupal::service('path.current')->getPath();
+	$path_args = explode('/', $current_path);
+	return $path_args;
 }
