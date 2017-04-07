@@ -88,8 +88,12 @@ class InscriptionStorage implements InscriptionStorageInterface {
     /**
      * {@inheritdoc}
      */
-     public function setAddUserConnect($id_user,$timeout,$jeton,$hits,$hits_consult,$hits_ses,$date_inscrit, 
-     $valid,$pref_sp,$pref_structure,$pref_centre,$droits,$domaine,$prefs_mc,$charte_approuve,$coordonne_structure){
+     public function setAddUserConnect($id_user,$timeout,$jeton,$hits,$hits_consult,$hits_ses,$date_inscrit,$valid,$pref_sp,$pref_structure,$pref_centre,$droits,$domaine,$prefs_mc,$charte_approuve,$coordonne_structure){
+        $this->connection->insert('bdseme_cettia.CT_user_connect')
+             ->fields(array('id_user'=>$id_user, 'timeout'=>$timeout, 'jeton'=>$jeton, 'hits'=>$hits,'hits_consult'=>$hits_consult, 'hits_ses'=>$hits_ses,
+             'date_inscrit'=>$date_inscrit, 'valid'=>$valid,'pref_sp'=>$pref_sp, 'pref_structure'=>$pref_structure,'pref_centre'=>$pref_centre,'droits'=>$droits,
+             'domaine'=>$domaine,'charte_approuve'=>$charte_approuve,'coordonne_structure'=>$coordonne_structure
+          ))->execute();
      }
 
     /**
@@ -99,7 +103,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
        return $this->connection->select('bdseme_cettia.CT_user_obseurs','bccuo')
               ->fields('bccuo',array('nom','prenom'))
               ->condition('id_user',$id,'=')
-              ->execute();
+              ->execute()->fetchAll();
     }
 
 }

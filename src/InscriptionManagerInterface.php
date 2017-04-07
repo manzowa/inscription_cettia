@@ -61,4 +61,26 @@ interface InscriptionManagerInterface {
      */
     public function getNomAndPrenomById($id);
 
+    /**
+     * Set a CT_user_connect
+     *
+     * @param integer| null , $id_user
+     * @param string | null, $timeout
+     * @param string | null, $jeton
+     * @param string | null, $hits
+     * @param string | null, $hits_consult
+     * @param string | null, $hits_ses
+     * @param date | null,   $date_inscrit
+     * @param string | null, $valid
+     * @param string | null, $pref_sp
+     * @param string | null, $pref_structure
+     * @param string | null, $pref_centre
+     * @param string | null, $droits
+     * @param string | null, $domaine
+     * @param string | null, $prefs_mc
+     * @param integer| null, $charte_approuve
+     * @param string | null, $coordonne_structure
+     */
+    public function AddConnect($id_user,$timeout,$jeton,$hits,$hits_consult,$hits_ses,$date_inscrit,$valid,$pref_sp,$pref_structure,$pref_centre,$droits,$domaine,$prefs_mc,$charte_approuve,$coordonne_structure);
+
 }

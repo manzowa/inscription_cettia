@@ -104,4 +104,11 @@ class InscriptionManager implements InscriptionManagerInterface {
     public function getNomAndPrenomById($id){
       return $this->inscriptionStorage->findNomAndPrenomById($id);
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function AddConnect($id_user,$timeout,$jeton,$hits,$hits_consult,$hits_ses,$date_inscrit,$valid,$pref_sp,$pref_structure,$pref_centre,$droits,$domaine,$prefs_mc,$charte_approuve,$coordonne_structure){
+      $this->inscriptionStorage->setAddUserConnect($id_user,$timeout,$jeton,$hits,$hits_consult,$hits_ses,$date_inscrit,$valid,$pref_sp,$pref_structure,$pref_centre,$droits,$domaine,$prefs_mc,$charte_approuve,$coordonne_structure);
+     }
 }

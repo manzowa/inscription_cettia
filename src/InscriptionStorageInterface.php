@@ -43,8 +43,7 @@ interface InscriptionStorageInterface {
       * @param integer| null, should contains $charte_approuve
       * @param integer| null, should contains $coordonne_structure
       */
-     public function setAddUserConnect($id_user,$timeout,$jeton,$hits,$hits_consult,$hits_ses,$date_inscrit, 
-     $valid,$pref_sp,$pref_structure,$pref_centre,$droits,$domaine,$prefs_mc,$charte_approuve,$coordonne_structure);
+     public function setAddUserConnect($id_user,$timeout,$jeton,$hits,$hits_consult,$hits_ses,$date_inscrit,$valid,$pref_sp,$pref_structure,$pref_centre,$droits,$domaine,$prefs_mc,$charte_approuve,$coordonne_structure);
 
      /**
       * Update a user 

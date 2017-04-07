@@ -41,8 +41,8 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
     if($form_id =='user_login_form' || $form_id == 'user_form' || $form_id == 'user_register_form' || $form_id == 'user_pass'){
         if($form_id == 'user_login_form'){
 
-        }else if($form_id =='user_register_form'){ // form enregistremen
-		   
+        }else if($form_id =='user_register_form'){ // form enregistrement
+
             $form['account']['nom'] = array(
 		          '#type' => 'textfield',
 		          '#title' => t('Nom'),
@@ -124,8 +124,7 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
 		          '#suffix' => '<p style="clear:both;">&nbsp;</p>',
 	        );
         }else if($form_id == 'user_pass'){  // form password forget
-			 drupal_set_message('WELCOME '.$form_id); 
-	
+			
              $form['name'] = array(
                    '#type' => 'textfield',
                    '#title' => t('Email'),
@@ -141,14 +140,13 @@ function inscription_cettia_help($route_name, RouteMatchInterface $route_match) 
              $form['actions'] = array('#type' => 'actions');
              $form['actions']['submit'] = array('#type' =>'submit', '#value' =>t('Envoyer nouveau mot de passe par courriel'));
        }else if( $form_id =='user_form'){ // user profile
-			drupal_set_message('WELCOME '.$form_id);
-
+	
 			$params = UrlArray();
 			$user_id= (int) $params[2];
-			$obseurs = manager()->getNomAndPrenomById($user_id);
+			$obseurs= manager()->getNomAndPrenomById($user_id);
 			$user = null;
 			foreach($obseurs as $item){ $user = $item;break;}
-
+    
 			$form['account']['nom'] = array(
 		          '#type' => 'textfield',
 		          '#title' => t('Nom'),
@@ -198,6 +196,7 @@ function inscription_cettia_user_presave($account){
   */
 function inscription_cettia_user_insert($account){
 	  // Provisional this of part.
+	  $request = \Drupal::request()->request;
       $roles = user_role_names(TRUE); // Get all roles that are available.
       $bundle = $account->bundle();
       $deleted = 0;
@@ -212,20 +211,46 @@ function inscription_cettia_user_insert($account){
           manager()->roles($bundle,$deleted, $entity_id, $revision_id, $langcode, $delta, $roles_target_id);
       }
 
-	  $form_state = new FormState();
-	  $request = \Drupal::request()->request;
-      $id = $account->id();
+	  $id = $account->id();
+	  $email = $account->getEmail();
+	  
 	  $nom= !empty($request->get('nom')) ? trim($request->get('nom')) : null;
 	  $prenom= !empty($request->get('prenom'))? trim($request->get('prenom')) : null;
-	  $email = $account->getEmail();
-      manager()->Add($id,$nom,$prenom, $email); // CT_user_obseurs;
+	  $charte_approuve = !empty($request->get('charte_approuve'))? trim($request->get('charte_approuve')) : null;
+	  $timeout =date("Y-m-d H:i:s");
+	  $jeton ="";
+	  $hits=1;
+	  $hits_consult=1;
+	  $hits_ses =1;
+	  $date_inscrit= date("Y-m-d H:i:s");    
+	  $valid =1;
+	  $pref_sp=0;
+	  $pref_structure=0;
+	  $pref_centre="";
+	  $droits=2; 
+	  $prefs_mc=0;
+	  $coordonne_structure="";
+
+	  global $base_url;
+	  $site = preg_replace("/^http:\/\//",'', $base_url);
+	  $site = preg_replace("/^www\./",'',$site);
+	  $site = explode("/", $site);
+	  $domaine= $site[0];
+
+	 
+    
+	  // Insert CT_user_obseurs;
+      manager()->Add($id,$nom,$prenom, $email);
+
+      // insert  CT_user_connect();
+	 // manager()->AddConnect($id,$timeout,$jeton,$hits,$hits_consult,$hits_ses,$date_inscrit,$valid,$pref_sp,$pref_structure, $pref_centre,$droits,$domaine,$prefs_mc,$charte_approuve,$coordonne_structure); 
 } 
 
 /**
  *  Implements hook_user_update 
  */
 function inscription_cettia_user_update(Drupal\Core\Session\AccountInterface $account){
-	drupal_set_message('WELCOME to update');
+
 	$request = \Drupal::request()->request;
 	$params = UrlArray();
 	$user_id= (int) $params[2];
@@ -246,8 +271,6 @@ function inscription_cettia_honeypot_time_limit($honeypot_time_limit, $form_valu
 	$request = \Drupal::request()->request;
 	global $base_url; 
 	$additions = 0;
-	var_dump($request);
-
 	if(isset($form_values) && isset($form_values['quest_antispam'])){
 
 		$input_num_atsp = $request->get('num_antispam');
@@ -258,12 +281,6 @@ function inscription_cettia_honeypot_time_limit($honeypot_time_limit, $form_valu
 	    $reponse = null;
 		include $php_file; 	//Inclusion file php
 		$honeypot_time = $form_values['honeypot_time'];
-
-		$test_rep = $request->get('');
-
-		drupal_set_message(''. print_r($rep_user, TRUE) .'');
-		drupal_set_message(''. print_r($reponse, TRUE) .'');
-		drupal_set_message(''. print_r($test_rep, TRUE) .'');
 
 		if(!isset($form_values['honeypot_time']) || !is_numeric($form_values['honeypot_time']) 
 			|| $form_values['honeypot_time'] > time()){
