@@ -1,7 +1,7 @@
 services:
   inscription.storage:
     class: Drupal\inscription_cettia\InscriptionStorage
-    arguments: ['@database']
+    arguments: []
 
   inscription.manager:
     class: Drupal\inscription_cettia\InscriptionManager

@@ -30,8 +30,9 @@ class InscriptionStorage implements InscriptionStorageInterface {
   /**
    * Constructor a InscriptionStorage object.
    */
-  public function __construct(Connection $connection) {
-    $this->connection = $connection;
+  public function __construct() {
+    // $this->connection = $connection;
+    $this->connection = \Drupal\Core\Database\Database::getConnection('cettia'); 
   }
 
   /**
@@ -45,7 +46,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
    * {@inheritdoc}
    */
   public function setAdd($id, $nom, $prenom, $mail){
-     $this->connection->insert('bdseme_cettia.CT_user_obseurs')
+     $this->connection->insert('CT_user_obseurs')
           ->fields(array('id_user'=>$id,'nom'=>$nom, 'prenom'=>$prenom,'mel'=>$mail))
           ->execute();
   }
@@ -54,7 +55,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
    * {@inheritdoc}
    */
    public function setUpdate($id_user_account,$nom, $prenom, $mail){
-       $this->connection->update('bdseme_cettia.CT_user_obseurs')
+       $this->connection->update('CT_user_obseurs')
             ->fields(array('nom'=>$nom, 'prenom'=>$prenom,'mel'=>$mail))
             ->condition('id_user',$id_user_account,'=')
             ->execute();
@@ -80,7 +81,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
      * {@inheritdoc}
      */
     public function findId($id){
-      return $this->connection->select('bdseme_cettia.CT_user_obseurs','bccuo')
+      return $this->connection->select('CT_user_obseurs','bccuo')
                   ->fields('bccuo', array('id_user'))
                   ->condition('id_user',$id,'=')->execute();
     }
@@ -89,7 +90,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
      * {@inheritdoc}
      */
      public function setAddUserConnect($id_user,$timeout,$jeton,$hits,$hits_consult,$hits_ses,$date_inscrit,$valid,$pref_sp,$pref_structure,$pref_centre,$droits,$domaine,$prefs_mc,$charte_approuve,$coordonne_structure){
-        $this->connection->insert('bdseme_cettia.CT_user_connect')
+        $this->connection->insert('CT_user_connect')
              ->fields(array('id_user'=>$id_user, 'timeout'=>$timeout, 'jeton'=>$jeton, 'hits'=>$hits,'hits_consult'=>$hits_consult, 'hits_ses'=>$hits_ses,
              'date_inscrit'=>$date_inscrit, 'valid'=>$valid,'pref_sp'=>$pref_sp, 'pref_structure'=>$pref_structure,'pref_centre'=>$pref_centre,'droits'=>$droits,
              'domaine'=>$domaine,'charte_approuve'=>$charte_approuve,'coordonne_structure'=>$coordonne_structure
@@ -100,7 +101,7 @@ class InscriptionStorage implements InscriptionStorageInterface {
      * {@iheritdoc}
      */
     public function findNomAndPrenomById($id){
-       return $this->connection->select('bdseme_cettia.CT_user_obseurs','bccuo')
+       return $this->connection->select('CT_user_obseurs','bccuo')
               ->fields('bccuo',array('nom','prenom'))
               ->condition('id_user',$id,'=')
               ->execute()->fetchAll();
